@@ -1,0 +1,9 @@
+# reference code
+/reference/
+
+# data file
+/data/
+
+# environment setting
+/.vscode
+
