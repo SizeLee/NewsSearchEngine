@@ -82,9 +82,12 @@ class wiki_spider:
         self.url_head = 'https://en.wikipedia.org'
         self.web_count = 0
     
-    def update_content(self, level):
+    def update_content(self, level, extendurl = None):
+        if extendurl is not None and type(extendurl) is list:
+            self.rooturl.extend(extendurl)
         self.link_file_dic = {}
-        self._crawl_content(self.rooturl, level)
+        for eachurl in self.rooturl:
+            self._crawl_content(eachurl, level)
         self.save_link_file_dic()
 
     def save_link_file_dic(self):
@@ -97,9 +100,11 @@ class wiki_spider:
         if url.startswith(self.url_head):
             complete_url = url
             url = complete_url[len(self.url_head):]
-        else:
+        elif url.startswith('/wiki/'):
             complete_url = self.url_head + url
-        # print(complete_url)
+        else:
+            return
+        print(complete_url)
         connection = urllib.request.urlopen(complete_url)
         content = connection.read()
         time.sleep(1)
@@ -148,7 +153,7 @@ class wiki_spider:
 
 
 if __name__ == '__main__':
-    ws = wiki_spider('/wiki/Machine_learning')
+    ws = wiki_spider(['/wiki/Machine_learning'])
     print(time.strftime('%Y-%m-%d %H:%M:%S'))
     ws.update_content(3)
     print(time.strftime('%Y-%m-%d %H:%M:%S'))
