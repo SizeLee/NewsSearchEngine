@@ -7,3 +7,5 @@
 # environment setting
 /.vscode
 
+# draft
+draft.py
