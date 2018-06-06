@@ -41,7 +41,7 @@ class wiki_spider:
         soup = BeautifulSoup(content, 'lxml')
         # print(soup.prettify)
         content = soup.body.find('div', id='content')
-        title = content.find('h1').string
+        title = soup.title.string
         print(title, url)
         # print(content.find('div'))
         main_body = content.find('div', id='bodyContent').find('div', id='mw-content-text').find('div')
