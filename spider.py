@@ -4,21 +4,31 @@ import xml.etree.ElementTree as ET
 import time
 import json
 import re
+import hashlib
+
+def get_md5(string):
+    return hashlib.md5(string.encode('gbk')).hexdigest()
 
 class wiki_spider:
     def __init__(self, rooturl):
         self.rooturl = rooturl
         self.link_file_dic = {}
+        self.title_filter = {}
+        self.content_filter = {}
         self.url_head = 'https://en.wikipedia.org'
         self.web_count = 0
     
     def update_content(self, level, extendurl = None):
         if extendurl is not None and type(extendurl) is list:
             self.rooturl.extend(extendurl)
+        self.web_count = 0
         self.link_file_dic = {}
+        self.title_filter = {}
+        self.content_filter = {}
         for eachurl in self.rooturl:
             self._crawl_content(eachurl, level)
         self.save_link_file_dic()
+        print('crawl %d web totally' %self.web_count)
 
     def save_link_file_dic(self):
         with open('link_file_dic.json', 'w') as f:
@@ -40,9 +50,16 @@ class wiki_spider:
         time.sleep(1)
         soup = BeautifulSoup(content, 'lxml')
         # print(soup.prettify)
-        content = soup.body.find('div', id='content')
         title = soup.title.string
-        print(title, url)
+
+        ## here filter same content by title
+        if title in self.title_filter:
+            return
+        else:
+            self.title_filter[title] = 0
+
+        print(self.web_count, title, url)
+        content = soup.body.find('div', id='content')
         # print(content.find('div'))
         main_body = content.find('div', id='bodyContent').find('div', id='mw-content-text').find('div')
         paragraphs = main_body.find_all('p')
@@ -53,6 +70,13 @@ class wiki_spider:
                 parastr += string
             # parastr = parastr.replace(u'\xa0', u' ')
             text = text + parastr + '\n'
+
+        ## here filter by content
+        md5_code = get_md5(text)
+        if md5_code in self.content_filter:
+            return
+        else:
+            self.content_filter[md5_code] = 0
         
         filename = 'data/%d.txt' %self.web_count
         with open(filename, 'w', encoding='utf8') as f:
@@ -66,7 +90,7 @@ class wiki_spider:
         for each in a:
             links.append(each.get('href'))
 
-        self.link_file_dic[url] = [filename, links] # [content file name, links it points to].
+        self.link_file_dic[url] = [title, filename, links] # [title, content file name, links it points to].
         
         if level == 1:
             return
