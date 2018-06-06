@@ -78,8 +78,8 @@ class wiki_spider:
         else:
             self.content_filter[md5_code] = 0
         
-        filename = 'data/%d.txt' %self.web_count
-        with open(filename, 'w', encoding='utf8') as f:
+        filename = 'data/doc/%d.txt' %self.web_count
+        with open(filename, 'w', encoding='utf-8') as f:
             f.write(text)
             self.web_count += 1
 
