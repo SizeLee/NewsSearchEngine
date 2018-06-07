@@ -8,5 +8,8 @@
 # environment setting
 /.vscode
 
+# pycache
+/__pycache__/
+
 # draft
 draft.py

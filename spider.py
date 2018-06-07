@@ -80,7 +80,7 @@ class wiki_spider:
         
         filename = 'data/doc/%d.txt' %self.web_count
         with open(filename, 'w', encoding='utf-8') as f:
-            f.write(text)
+            f.write(time.strftime('%Y-%m-%d %H:%M:%S') + '\n' + text) ##time.strftime('%Y-%m-%d %H:%M:%S') record collect time
             self.web_count += 1
 
         a = []

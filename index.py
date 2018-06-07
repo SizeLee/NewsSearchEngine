@@ -1,8 +1,10 @@
 import os
-import xml.etree.ElementTree as ET
-import jieba
+# import xml.etree.ElementTree as ET
+# import jieba
 import sqlite3
 import configparser
+import time
+import re
 
 def low_case_doc(filename):
     with open(filename, 'r', encoding='utf-8') as f:
@@ -95,12 +97,20 @@ class IndexModule:
         files = os.listdir(config['DEFAULT']['doc_dir_path'])
         AVG_L = 0
         for i in files:
-            root = ET.parse(config['DEFAULT']['doc_dir_path'] + i).getroot()
-            title = root.find('title').text
-            body = root.find('body').text
-            docid = int(root.find('id').text)
-            date_time = root.find('datetime').text
-            seg_list = jieba.lcut(title + '。' + body, cut_all=False)
+            print('processing file: ' + i)
+            with open(config['DEFAULT']['doc_dir_path'] + i, 'r', encoding='utf-8') as f:
+                # date_time = f.readline().strip()  ### if spider record time, uncomment this line
+                title = f.readline().strip()
+                body = f.read()
+                docid = int(i[:-4])
+                date_time = time.strftime('%Y-%m-%d %H:%M:%S')  ## simulate different file's spider time, it should be collect in spider.py
+                seg_list = re.findall(r'[a-z]+', title + ' ' + body)
+            # root = ET.parse(config['DEFAULT']['doc_dir_path'] + i).getroot()
+            # title = root.find('title').text
+            # body = root.find('body').text
+            # docid = int(root.find('id').text)
+            # date_time = root.find('datetime').text
+            # seg_list = jieba.lcut(title + '。' + body, cut_all=False)
             
             ld, cleaned_dict = self.clean_list(seg_list)
             
@@ -118,9 +128,15 @@ class IndexModule:
         config.set('DEFAULT', 'avg_l', str(AVG_L))
         with open(self.config_path, 'w', encoding = self.config_encoding) as configfile:
             config.write(configfile)
+        
+        print('Processing done! Inverted index is generated')
+        print('writing inverted index into database......')
         self.write_postings_to_db(config['DEFAULT']['db_path'])
+        print('done!')
 
 
 if __name__ == '__main__':
-    preprocess('config.ini', 'utf-8')
+    # preprocess('config.ini', 'utf-8')
+    im = IndexModule('config.ini', 'utf-8')
+    im.construct_postings_lists()
     
