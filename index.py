@@ -24,6 +24,10 @@ def preprocess(config_path, config_encoding):
     for each in files:
         low_case_doc(config['DEFAULT']['doc_dir_path'] + each)
 
+class pagerank:
+    def __init__(self, link_file_dic_filename, out_file_link_filename):
+        return
+
 class Doc:
     docid = 0
     date_time = ''
@@ -104,7 +108,7 @@ class IndexModule:
                 body = f.read()
                 docid = int(i[:-4])
                 date_time = time.strftime('%Y-%m-%d %H:%M:%S')  ## simulate different file's spider time, it should be collect in spider.py
-                seg_list = re.findall(r'[a-z]+', title + ' ' + body)
+                seg_list = re.findall(r'[A-Za-z]+', title + ' ' + body)
             # root = ET.parse(config['DEFAULT']['doc_dir_path'] + i).getroot()
             # title = root.find('title').text
             # body = root.find('body').text
