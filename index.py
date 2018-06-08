@@ -5,6 +5,7 @@ import sqlite3
 import configparser
 import time
 import re
+import json
 
 def low_case_doc(filename):
     with open(filename, 'r', encoding='utf-8') as f:
@@ -26,6 +27,29 @@ def preprocess(config_path, config_encoding):
 
 class pagerank:
     def __init__(self, link_file_dic_filename, out_file_link_filename):
+        with open(link_file_dic_filename, 'r') as f:
+            self.link_file_dic = json.load(f)  # [title, content file name, links it points to].
+            # print(self.link_file_dic)
+
+        out_file_link = {}
+        for eachkey in self.link_file_dic:
+            docid = self.link_file_dic[eachkey][1]
+            out_file_link[docid] = eachkey
+        # print(out_file_link)
+
+        with open(out_file_link_filename, 'w') as f:
+            json.dump(out_file_link, f)
+
+        self.in_link_dic = {}
+        for eachkey in self.link_file_dic:
+            self.in_link_dic[eachkey] = set()
+        
+        for eachkey in self.link_file_dic:
+            for eachlink in self.link_file_dic[eachkey][2]:
+                if eachlink not in self.in_link_dic:
+                    self.in_link_dic[eachlink] = set()
+                self.in_link_dic[eachlink].add(eachkey)
+
         return
 
 class Doc:
@@ -103,11 +127,11 @@ class IndexModule:
         for i in files:
             print('processing file: ' + i)
             with open(config['DEFAULT']['doc_dir_path'] + i, 'r', encoding='utf-8') as f:
-                # date_time = f.readline().strip()  ### if spider record time, uncomment this line
+                date_time = f.readline().strip()  ### if spider record time, uncomment this line
                 title = f.readline().strip()
                 body = f.read()
                 docid = int(i[:-4])
-                date_time = time.strftime('%Y-%m-%d %H:%M:%S')  ## simulate different file's spider time, it should be collect in spider.py
+                # date_time = time.strftime('%Y-%m-%d %H:%M:%S')  ## simulate different file's spider time, it should be collect in spider.py
                 seg_list = re.findall(r'[A-Za-z]+', title + ' ' + body)
             # root = ET.parse(config['DEFAULT']['doc_dir_path'] + i).getroot()
             # title = root.find('title').text
@@ -141,6 +165,7 @@ class IndexModule:
 
 if __name__ == '__main__':
     # preprocess('config.ini', 'utf-8')
-    im = IndexModule('config.ini', 'utf-8')
-    im.construct_postings_lists()
+    # im = IndexModule('config.ini', 'utf-8')
+    # im.construct_postings_lists()
+    p = pagerank('link_file_dic.json', 'file_link_dic.json')
     

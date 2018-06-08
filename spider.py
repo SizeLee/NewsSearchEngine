@@ -81,7 +81,6 @@ class wiki_spider:
         filename = 'data/doc/%d.txt' %self.web_count
         with open(filename, 'w', encoding='utf-8') as f:
             f.write(time.strftime('%Y-%m-%d %H:%M:%S') + '\n' + text) ##time.strftime('%Y-%m-%d %H:%M:%S') record collect time
-            self.web_count += 1
 
         a = []
         for each in paragraphs:
@@ -90,7 +89,7 @@ class wiki_spider:
         for each in a:
             links.append(each.get('href'))
 
-        self.link_file_dic[url] = [title, filename, links] # [title, content file name, links it points to].
+        self.link_file_dic[url] = [title, self.web_count, links] # [title, content file id: docid, links it points to].
         
         if level == 1:
             return
@@ -99,6 +98,8 @@ class wiki_spider:
             if each in self.link_file_dic:
                 continue
             self._crawl_content(each, level-1)
+
+        self.web_count += 1
 
         return
             
