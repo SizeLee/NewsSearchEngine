@@ -6,6 +6,8 @@ import configparser
 import time
 import re
 import json
+import numpy as np
+# import random
 
 def low_case_doc(filename):
     with open(filename, 'r', encoding='utf-8') as f:
@@ -47,10 +49,66 @@ class pagerank:
         for eachkey in self.link_file_dic:
             for eachlink in self.link_file_dic[eachkey][2]:
                 if eachlink not in self.in_link_dic:
-                    self.in_link_dic[eachlink] = set()
+                    # self.in_link_dic[eachlink] = set()
+                    continue
                 self.in_link_dic[eachlink].add(eachkey)
 
+        self.whole_link = list(self.link_file_dic.keys())
+        self.whole_link.sort(key=lambda x: int(self.link_file_dic[x][1]))
+        # print(self.whole_link)
+        print(len(self.whole_link))
+        self.link_num = len(self.whole_link)
+        self.pagerank_value = {}
+        self.pagerank_value_array = np.tile(np.array([1/self.link_num]), (self.link_num, 1))
+        for each in self.whole_link:
+            self.pagerank_value[each] = 1/self.link_num
+        # print(self.pagerank_value)
+        self.adjacencyM = np.zeros((self.link_num, self.link_num))
+        for i in range(self.link_num):
+            link = self.whole_link[i]
+            point_to = self.link_file_dic[link][2]
+            if len(point_to) == 0:
+                continue
+            v = 1/len(point_to)
+            for each in point_to:
+                if each not in self.link_file_dic:
+                    continue
+                p_column = i
+                p_row = int(self.link_file_dic[each][1])
+                self.adjacencyM[p_row, p_column] = v
+
+        self.random_walk = np.tile(np.array([1/self.link_num]), (self.link_num, 1))
+
+        self.alpha = 0.85
+        self.adjacencyM = self.alpha * self.adjacencyM
+        self.random_walk = (1 - self.alpha) * self.random_walk
+
         return
+
+    def calculate(self, max_round):
+        print('start tuning page_rank_value...........')
+        for i in range(max_round):
+            last = self.pagerank_value_array
+            self.pagerank_value_array = np.dot(self.adjacencyM, last) + self.random_walk
+            stable = np.sum((self.pagerank_value_array - last)**2)
+            print('change in round', i+1,': ', stable)
+            if stable == 0:
+                break
+        print('done!')      
+        # print(self.pagerank_value_array)
+
+        return
+
+    def get_page_rank(self):
+        for each in self.pagerank_value:
+            self.pagerank_value[each] = self.pagerank_value_array[int(self.link_file_dic[each][1]), 0]
+        # print(self.pagerank_value_array.reshape((-1)).tolist())
+        pagerank_json = {'link_dic':self.pagerank_value, 'list':self.pagerank_value_array.reshape((-1)).tolist()}
+        # print(self.pagerank_value[self.whole_link[0]],self.pagerank_value[self.whole_link[1]],self.pagerank_value[self.whole_link[2]])
+        with open('page_rank_v.json', 'w') as f:
+            json.dump(pagerank_json, f)
+            
+        return self.pagerank_value_array
 
 class Doc:
     docid = 0
@@ -133,12 +191,7 @@ class IndexModule:
                 docid = int(i[:-4])
                 # date_time = time.strftime('%Y-%m-%d %H:%M:%S')  ## simulate different file's spider time, it should be collect in spider.py
                 seg_list = re.findall(r'[A-Za-z]+', title + ' ' + body)
-            # root = ET.parse(config['DEFAULT']['doc_dir_path'] + i).getroot()
-            # title = root.find('title').text
-            # body = root.find('body').text
-            # docid = int(root.find('id').text)
-            # date_time = root.find('datetime').text
-            # seg_list = jieba.lcut(title + '。' + body, cut_all=False)
+           
             
             ld, cleaned_dict = self.clean_list(seg_list)
             
@@ -165,7 +218,9 @@ class IndexModule:
 
 if __name__ == '__main__':
     # preprocess('config.ini', 'utf-8')
-    # im = IndexModule('config.ini', 'utf-8')
-    # im.construct_postings_lists()
+    im = IndexModule('config.ini', 'utf-8')
+    im.construct_postings_lists()
     p = pagerank('link_file_dic.json', 'file_link_dic.json')
+    p.calculate(500)
+    p.get_page_rank()
     

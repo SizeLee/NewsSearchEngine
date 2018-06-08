@@ -3,6 +3,7 @@ import operator
 import sqlite3
 import configparser
 import re
+import json
 from datetime import *
 
 class SearchEngine:
@@ -31,7 +32,8 @@ class SearchEngine:
         self.B = float(config['DEFAULT']['b'])
         self.N = int(config['DEFAULT']['n'])
         self.AVG_L = float(config['DEFAULT']['avg_l'])
-        
+        self.page_rank_weight = float(config['DEFAULT']['page_rank_weight'])
+        self.page_rank_filename = config['DEFAULT']['page_rank_filename']
 
     def __del__(self):
         self.conn.close()
@@ -117,6 +119,8 @@ class SearchEngine:
     def result_by_hot(self, sentence):
         seg_list = re.findall(r'[A-Za-z]+', sentence)
         n, cleaned_dict = self.clean_list(seg_list)
+        with open(self.page_rank_filename, 'r') as f:
+            page_rank_v = json.load(f)['list']
         hot_scores = {}
         for term in cleaned_dict.keys():
             r = self.fetch_from_db(term)
@@ -140,8 +144,11 @@ class SearchEngine:
                     hot_scores[docid] = hot_scores[docid] + hot_score
                 else:
                     hot_scores[docid] = hot_score
+            for each in hot_scores:
+                hot_scores[each] += self.page_rank_weight * page_rank_v[int(each)]
         hot_scores = sorted(hot_scores.items(), key = operator.itemgetter(1))
         hot_scores.reverse()
+        # print(hot_scores)
         if len(hot_scores) == 0:
             return 0, []
         else:
@@ -158,4 +165,6 @@ class SearchEngine:
 if __name__ == "__main__":
     se = SearchEngine('config.ini', 'utf-8')
     flag, rs = se.search('machine learning', 0)
+    print(rs[:10])
+    flag, rs = se.search('machine learning', 2)
     print(rs[:10])
