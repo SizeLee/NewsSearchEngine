@@ -29,6 +29,7 @@ class SearchEngine:
         self.stop_words = set(words.split('\n'))
         self.conn = sqlite3.connect(config['DEFAULT']['db_path'])
         self.K1 = float(config['DEFAULT']['k1'])
+        self.K2 = float(config['DEFAULT']['k2'])
         self.B = float(config['DEFAULT']['b'])
         self.N = int(config['DEFAULT']['n'])
         self.AVG_L = float(config['DEFAULT']['avg_l'])
@@ -122,6 +123,7 @@ class SearchEngine:
         with open(self.page_rank_filename, 'r') as f:
             page_rank_v = json.load(f)['list']
         hot_scores = {}
+        time_scores = {}
         for term in cleaned_dict.keys():
             r = self.fetch_from_db(term)
             if r is None:
@@ -139,13 +141,30 @@ class SearchEngine:
                 td = now_datetime - news_datetime
                 BM25_score = (self.K1 * tf * w) / (tf + self.K1 * (1 - self.B + self.B * ld / self.AVG_L))
                 td = (timedelta.total_seconds(td) / 3600) # hour
-                hot_score = math.log(BM25_score) + 1 / td
+                hot_score = math.log(BM25_score)
+                if docid not in time_scores:
+                    time_scores[docid] = td
                 if docid in hot_scores:
                     hot_scores[docid] = hot_scores[docid] + hot_score
                 else:
                     hot_scores[docid] = hot_score
-            for each in hot_scores:
-                hot_scores[each] += self.page_rank_weight * page_rank_v[int(each)]
+            
+        # judge_range = sorted(hot_scores.items(), key = operator.itemgetter(1), reverse=True)[:10]
+        # hot_score_level = 0
+        # for each in judge_range:
+        #     hot_score_level += each[1]
+        # hot_score_level /= 10
+
+        # page_rank_level = 0
+        # for each in judge_range:
+        #     page_rank_level += self.page_rank_weight * page_rank_v[int(each[0])]
+        # page_rank_level /= 10
+
+        # print('h', hot_score_level)
+        # print('p', page_rank_level)
+            # print(self.K2)
+        for each in hot_scores:
+            hot_scores[each] += self.page_rank_weight * page_rank_v[int(each)] + self.K2/time_scores[each]
         hot_scores = sorted(hot_scores.items(), key = operator.itemgetter(1))
         hot_scores.reverse()
         # print(hot_scores)
@@ -167,4 +186,8 @@ if __name__ == "__main__":
     flag, rs = se.search('machine learning', 0)
     print(rs[:10])
     flag, rs = se.search('machine learning', 2)
+    print(rs[:10])
+    flag, rs = se.search('computer science', 0)
+    print(rs[:10])
+    flag, rs = se.search('computer science', 2)
     print(rs[:10])
