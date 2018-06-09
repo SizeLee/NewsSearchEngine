@@ -141,7 +141,7 @@ class SearchEngine:
                 td = now_datetime - news_datetime
                 BM25_score = (self.K1 * tf * w) / (tf + self.K1 * (1 - self.B + self.B * ld / self.AVG_L))
                 td = (timedelta.total_seconds(td) / 3600) # hour
-                hot_score = math.log(BM25_score)
+                hot_score = BM25_score
                 if docid not in time_scores:
                     time_scores[docid] = td
                 if docid in hot_scores:
